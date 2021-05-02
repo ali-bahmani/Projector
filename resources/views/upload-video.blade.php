@@ -23,7 +23,7 @@
             <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     {{--end bootstrap--}}
 
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 </head>
 <body>
@@ -63,15 +63,15 @@
                                     <label for="resolution">Resolution: </label>
                                     <select id="resolution" name="resolution" class="form-control">
                                         <option selected value="mkv">1920×1080 (1080p)</option>
-                                        <option value="1280.720">1280×720 (720)</option>
-                                        <option value="640.480">640×480 (480)</option>
+                                        <option value="1280.720">1280×720 (720p)</option>
+                                        <option value="640.480">640×480 (480p)</option>
                                         <option value="640.360">640×360 (360p)</option>
                                         <option value="320.240">320×240 (240p)</option>
                                     </select>
                                 </div>
 
                                 <div class="form-group mt-1">
-                                    <button type="submit" class="btn btn-danger btn-block">Submit</button>
+                                    <button type="submit" class="btn btn-danger btn-block"><i class="fa fa-upload" aria-hidden="true"></i> Upload </button>
                                 </div>
                             </form>
                         </div>
@@ -102,7 +102,7 @@
                                 </div>
 
                                 <div class="form-group mt-1">
-                                    <button type="submit" class="btn btn-warning btn-block">Submit</button>
+                                    <button type="submit" class="btn btn-warning btn-block text-light"><i class="fa fa-upload" aria-hidden="true"></i> Upload </button>
                                 </div>
                             </form>
                         </div>
@@ -124,14 +124,23 @@
                                 </div>
 
                                 <div class="form-group mt-1">
-                                    <button type="submit" class="btn btn-success btn-block">Submit</button>
+                                    <button type="submit" class="btn btn-info btn-block"><i class="fa fa-upload" aria-hidden="true"></i> Upload </button>
                                 </div>
                             </form>
                         </div>
                     </div>
 
                 </div>
-
+                
+                @if(session()->has('link'))
+                    <div class="card-footer">
+                        <div class="form-group mt-1">
+                            <form action="{{session()->get('link')}}">
+                                <button type="submit" class="btn btn-success btn-block" ><i class="fa fa-download"></i> Download </button>
+                            </form>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

@@ -71,9 +71,10 @@ class VideoController extends Controller
             ->toDisk($video->disk)
             ->inFormat(new \FFMpeg\Format\Video\X264)
             ->save($path);
-            
+        $video->url = Storage::disk($video->disk)->url($path);
         $video->save();
-        return Storage::disk('public')->download($path);
+
+        return back()->with('link',$video->url);
     }
 
     public function cFormat(Video $video,$format)
@@ -87,24 +88,28 @@ class VideoController extends Controller
             ->inFormat($format == 'mp3' ? new \FFMpeg\Format\Audio\Mp3() : new \FFMpeg\Format\Video\X264('libmp3lame', 'libx264'))
             ->save($path);
 
+        $video->url = Storage::disk($video->disk)->url($path);
         $video->save();
-        return Storage::disk('public')->download($path);
+
+        return back()->with('link',$video->url);
     }
 
     public function cThumbnail(Video $video,$second)
     {
         $video->converted_at = now()->format('Y-m-d');
 
-        $imagePath = 'Thumbnail/'.now()->format('Y-m-d').$video->id.'png';
+        $path = 'Thumbnail/'.now()->format('Y-m-d').$video->id.'png';
 
         FFMpeg::fromDisk($video->disk)
             ->open($video->path)
             ->getFrameFromSeconds($second)
             ->export()
             ->toDisk($video->disk)
-            ->save($imagePath);
+            ->save($path);
 
+        $video->url = Storage::disk($video->disk)->url($path);
         $video->save();
-        return Storage::disk('public')->download($imagePath);
+
+        return back()->with('link',$video->url);
     }
 }
