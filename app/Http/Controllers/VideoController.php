@@ -8,15 +8,17 @@ use FFMpeg\FFProbe;
 use Illuminate\Support\Facades\Storage;
 use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg as FFmpeg;
 use FFMpeg\Filters\Video\VideoFilters;
+use App\Jobs\ProcessVideo;
+
 class VideoController extends Controller
 {
     protected $size;
     public function uploadVideo(Request $request){
 
+        // video validation
         $video = $request->validate([
-            'video' => 'required|mimes:mp4,avi,mkv,mov,ogg|max:100000',
+            'video' => 'required|mimetypes:video/x-ms-asf,video/x-flv,video/mp4,application/x-mpegURL,video/MP2T,video/3gpp,video/quicktime,video/x-msvideo,video/x-ms-wmv,video/avi|max:100000',
         ]);
-
         
         $name = now()->format('Y-m-d').'-'.$request->file('video')->getClientOriginalName();
 
@@ -31,6 +33,8 @@ class VideoController extends Controller
             'ffprobe.binaries' => 'C:/ffmpeg/bin/ffprobe.exe'
             
         ]);
+
+        // get default witdh & height video
         $video_dimension = $ffprob
             ->streams(public_path('storage').'/'.$video->path)
             ->videos()
@@ -42,57 +46,33 @@ class VideoController extends Controller
         $video->video_default_res = $witdh.'.'.$height;
         
         if($video->save()){
-            if($request->type == 'cRes'){
-                return $this->cRes($video,$request->resolution);
+            switch ($request->type) {
+                case 'cRes':
+                    $input = ['type'=>'res','data'=>$request->resolution];
+                    ProcessVideo::dispatch($video,$input);
+                    return back()->with('link',$video->url);
+
+                    break;
+                
+                case 'cFormat':
+                    $input = ['type'=>'format','data'=>$request->format];
+                    ProcessVideo::dispatch($video,$input);
+                    return back()->with('link',$video->url);
+                    
+                    break;
+                
+                case 'cThumbnail':
+                    return $this->cThumbnail($video,$request->second);
+                    
+                    break;
             }
-            if($request->type == 'cFormat'){
-                return $this->cFormat($video,$request->format);
-            }
-            if($request->type == 'cThumbnail'){
-                return $this->cThumbnail($video,$request->second);
-            }
+
         }else{
             return 'erore in saving';
         } 
         
     }
 
-    public function cRes(Video $video,$res)
-    {
-        $video->converted_at = now()->format('Y-m-d');
-        $path = 'Resolutions/'.now()->format('Y-m-d').$video->id.'.'.$video->video_default_format;
-        $this->size = explode(".",$res);
-        FFMpeg::fromDisk($video->disk)
-            ->open($video->path)
-            ->addFilter(function (VideoFilters $filters) {
-                $filters->resize(new \FFMpeg\Coordinate\Dimension($this->size[0], $this->size[1]));
-            })
-            ->export()
-            ->toDisk($video->disk)
-            ->inFormat(new \FFMpeg\Format\Video\X264)
-            ->save($path);
-        $video->url = Storage::disk($video->disk)->url($path);
-        $video->save();
-
-        return back()->with('link',$video->url);
-    }
-
-    public function cFormat(Video $video,$format)
-    {
-        $video->converted_at = now()->format('Y-m-d');
-        $path = 'Formats/'.now()->format('Y-m-d').$video->id.'.'.$format;
-
-        FFMpeg::fromDisk($video->disk)
-            ->open($video->path)
-            ->export()
-            ->inFormat($format == 'mp3' ? new \FFMpeg\Format\Audio\Mp3() : new \FFMpeg\Format\Video\X264('libmp3lame', 'libx264'))
-            ->save($path);
-
-        $video->url = Storage::disk($video->disk)->url($path);
-        $video->save();
-
-        return back()->with('link',$video->url);
-    }
 
     public function cThumbnail(Video $video,$second)
     {
